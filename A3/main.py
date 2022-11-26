@@ -1,3 +1,5 @@
+# Daniel Yan ()
+# Joshua Gonzales (20218629)
 # Dynamic programming for mesh generation
 #
 # Usage: python main.py <file of slices>
@@ -160,15 +162,17 @@ class Dir(enum.Enum): # for storing directions of min-area
     PREV_ROW = 1
     PREV_COL = 2
 
-
+# Algorithm by Daniel Yan and Joshua Gonzales
 def buildTriangles( slice0, slice1 ):
 
     # Find the closest pair of vertices (one from each slice) to start with.
     #
     # This can be done with "brute force" if you wish.
     #
-    # [1 mark] 
+    # [1 mark]
 
+    # PRE: Slice(object) for both top and bottom
+    # POST: Returns Vertex(object)
     def bruteForceClosestPair(slice0,slice1):
         point1 = slice0.verts[0]
         point2 = slice1.verts[0]
@@ -184,8 +188,11 @@ def buildTriangles( slice0, slice1 ):
         return point1, point2
 
     slice0Point, slice1Point = bruteForceClosestPair(slice0,slice1)
-    #print("\nPair between Slices: " + str(slice0Point) + " | " + str(slice1Point))
-    #print("Coordinate Pairs between Slices: " + str(slice0Point.coords) + " | " + str(slice1Point.coords))
+    # print("hello \n")
+ 
+    # [YOUR CODE HERE]
+
+
     # Make a cyclic permutation of the vertices of each slice,
     # that starts at the closest vertex in each slice found above.
     #
@@ -193,7 +200,9 @@ def buildTriangles( slice0, slice1 ):
     # triangulation ends up on the same edge as it started.
     #
     # [1 mark]
-
+    
+    # PRE: vertex(object) and slice(object)
+    # POST: Returns array of vertex(object)
     def cyclicPermutation(startingPoint,slice):
         i = 0
         currVert = startingPoint
@@ -206,9 +215,28 @@ def buildTriangles( slice0, slice1 ):
             i+=1
         return cyclicPermutation
     
-    cycleSlice0, cycleSlice1 = cyclicPermutation(slice0Point,slice0), cyclicPermutation(slice1Point,slice1)
-    #print(cycleSlice0)
-    #print(cycleSlice1)
+    newsliceVerts0, newsliceVerts1 = cyclicPermutation(slice0Point,slice0), cyclicPermutation(slice1Point,slice1)
+    
+    
+    # for s in slice0.verts:
+    #     if s == minSlice0:
+    #         sVal = s
+    #         slice0.verts.remove(s)
+    #         slice0.verts.append(sVal)
+    #         slice0.verts.insert(0,sVal)
+    #         break
+    # #print(slice0.verts)
+
+    # for k in slice1.verts:
+    #     if k == minSlice1:
+    #         kVal = k
+    #         slice1.verts.remove(k)
+    #         slice1.verts.append(kVal)
+    #         slice1.verts.insert(0,kVal)
+    #         break
+    # #print(slice1.verts)
+
+
     
 
     # Set up the 'minArea' array.  The first dimension (rows) of the
@@ -221,55 +249,62 @@ def buildTriangles( slice0, slice1 ):
     # row or previous column.
     #
     # [1 mark]
-
-
+    
     # [YOUR CODE HERE]
 
-    numVerts0 = len(slice0.verts)
-    numVerts1 = len(slice1.verts)
-    minArea = [[0 for r in range(numVerts0+1)]for c in range(numVerts1+1)]
-    minDir =  [[0 for r in range(numVerts0+1)]for c in range(numVerts1+1)]
-    #print(minArea)
+   # print(len(slice0.verts))
+    len0plus1 = len(slice0.verts)
+    len1plus1 = len(slice1.verts)
+    
+    minArea = [[0 for row in range(len0plus1+1)] for col in range(len1plus1+1)]
+    minDir = [[0 for row in range(len0plus1+1)] for col in range(len1plus1+1)]
 
+    ##print(minArea)
+    
 
+    minArea[0][0] = 0    
+    
     # Fill in the minArea array
-    minArea[0][0] = 0 # Starting edge has zero area
+
+    #Starting edge has zero area
 
     # Fill in row 0 of minArea and minDir, since it's a special case as there's no row -1
     #
     # [2 marks]
-    
-    for i in range(1, numVerts0+1):
-        minArea[0][i] = triangleArea(cycleSlice0[i-1].coords,cycleSlice1[0].coords,cycleSlice0[i].coords) + minArea[0][i-1]
-        minDir[0][i] = Dir.PREV_COL
-    #print(minArea)
+
+    for a in range(1,len0plus1+1):
+        minArea[0][a] = triangleArea(newsliceVerts0[a-1].coords, newsliceVerts1[0].coords, newsliceVerts0[a].coords) + minArea[0][a-1]
+        minDir[0][a] = Dir.PREV_COL
+
+    # [YOUR CODE HERE]
+
 
     # Fill in col 0 of minArea and minDir, since it's a special case as there's no col -1
     #
     # [2 marks]
+    for b in range(1,len1plus1+1):
+        minArea[b][0] = triangleArea(newsliceVerts1[b-1].coords, newsliceVerts0[0].coords, newsliceVerts1[b].coords) + minArea[b-1][0]
+        minDir[b][0] = Dir.PREV_ROW
+
     # [YOUR CODE HERE]
-
-    for i in range(1, numVerts1+1):
-        minArea[i][0] = triangleArea(cycleSlice1[i-1].coords,cycleSlice0[0].coords , cycleSlice1[i].coords) + minArea[i-1][0]
-        minDir[i][0] = Dir.PREV_ROW
     #print(minArea)
-
 
     # Fill in the remaining entries of minArea and minDir.  This is very similar to the above, but more general.
     #
     # [2 marks]
-
-    for r in range(1,len(slice1.verts)+1):
-        for c in range(1, len(slice0.verts)+1):
-            minAreaLeft = minArea[r][c-1] + triangleArea(cycleSlice0[c-1].coords,cycleSlice0[c].coords,cycleSlice1[r].coords)
-            minAreaUp = minArea[r-1][c] + triangleArea(cycleSlice1[r-1].coords,cycleSlice0[c].coords,cycleSlice1[r].coords)
-            if minAreaLeft < minAreaUp:
-                minArea[r][c] = minAreaLeft
-                minDir[r][c] = Dir.PREV_COL
+    for c in range (1,len1plus1+1):
+        
+        for d in range(1,len0plus1+1):
+            minArea[c][d] = min((minArea[c][d-1] + triangleArea(newsliceVerts0[d-1].coords, newsliceVerts0[d].coords, newsliceVerts1[c].coords)), (minArea[c-1][d] + triangleArea(newsliceVerts1[c-1].coords, newsliceVerts0[d].coords, newsliceVerts1[c].coords)))
+            
+            # Determine direction is either a prev_col or prev_row
+            if minArea[c][d] == minArea[c][d-1] + triangleArea(newsliceVerts0[d-1].coords, newsliceVerts0[d].coords, newsliceVerts1[c].coords):
+                minDir[c][d] = Dir.PREV_COL
             else:
-                minArea[r][c] = minAreaUp
-                minDir[r][c] = Dir.PREV_ROW
-    #print(minArea)
+                minDir[c][d] = Dir.PREV_ROW
+    
+    # print(minArea)
+
     # It's useful for debugging at this point to print out the minArea
     # and minDir arrays together.  For example, print a table in which
     # each element contains the integer minArea and a line (- or |) to
@@ -303,40 +338,34 @@ def buildTriangles( slice0, slice1 ):
 
     
     # Walk backward through the 'minDir' array to build triangulation.
-    triangles = []
-    r = numVerts1
-    c = numVerts0
-
+    #
     # Start at the maximum r,c indices and go backward, depending
     # on whether minDir[r][c] is Dir.PREV_ROW or Dir.PREV_COL.
-    
+    #
     # For each step backward, construct a triangle from the three
     # vertices: Two of the vertices are indexed by r (which comes from
     # slice1) and c (which comes from slice0).  The remaining vertex
     # depends on which direction (PREV_ROW or PREV_COL) you stepped
     # backward toward.
-    while True:
-        if minDir[r][c] == Dir.PREV_ROW:
-            newTriangle=Triangle([cycleSlice1[r],cycleSlice0[c],cycleSlice1[r-1]])
-            triangles.append(newTriangle)
-            r = r-1
-        else:
-            newTriangle=Triangle([cycleSlice1[r],cycleSlice0[c],cycleSlice0[c-1]])
-            triangles.append(newTriangle)
-            c = c-1
-        if r == 0 and c == 0:
-            break
+    #
     # Continue going backward through the array until reaching [0][0].
     #
     # [3 marks]
 
-    # testVert = [slice0Point, slice0Point.nextV, slice1Point]
-    # test = Triangle(testVert)
-    # triangles.append(test)
-
-
-    # [YOUR CODE HERE]
-
+    # builds triangles array for gui to build
+    triangles = []
+    run = 1
+    slice0Len = len(newsliceVerts0)-1
+    slice1Len = len(newsliceVerts1)-1 
+    while run == 1:
+        if minDir[slice1Len][slice0Len] == Dir.PREV_COL:
+            triangles.append(Triangle([newsliceVerts1[slice1Len], newsliceVerts0[slice0Len], newsliceVerts0[slice0Len-1]]))
+            slice0Len -= 1
+        else:
+            triangles.append(Triangle([newsliceVerts1[slice1Len], newsliceVerts0[slice0Len], newsliceVerts1[slice1Len-1]]))
+            slice1Len -= 1
+        if slice0Len == 0 and slice1Len == 0:
+            run = 0
 
     # Return a list of the triangles that you constructed
     
